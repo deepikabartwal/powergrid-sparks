@@ -33,7 +33,7 @@ const {
   getBuildingCost,
   sendLogs,
   passBuildingCities,
-  discardPowerplant
+  discardPowerplant,
 } = require("./src/handlers");
 
 app.set("views", __dirname + "/public/html");
@@ -76,6 +76,5 @@ app.use(express.static("public/stylesheet"));
 app.use(express.static("public/javascript"));
 app.use(express.static("public/images"));
 app.use(express.static("public/pdf"));
-app.use(express.static("private/teamProfiles"));
 
 module.exports = app;

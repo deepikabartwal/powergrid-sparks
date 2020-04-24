@@ -6,19 +6,25 @@ const PowerPlantMarket = require("./model/power_plant_cards");
 const Player = require("./model/player");
 const Bureaucracy = require("./model/bureaucracy");
 const Graph = require("node-dijkstra");
-const { COAL, OIL, URANIUM, GRABAGE, HYBRID } = require("./constants/resourceTypes");
+const {
+  COAL,
+  OIL,
+  URANIUM,
+  GRABAGE,
+  HYBRID,
+} = require("./constants/resourceTypes");
 const {
   CARD_DATA_PATH,
   PAYMENT_ORDER_DATA_PATH,
   TRAVELLING_COST_DATA_PATH,
-  ENCODING_UTF8
+  ENCODING_UTF8,
 } = require("./constants/filePaths");
 const {
   BUY_POWERPLANT,
   BUY_RESOURCES,
   END_GAME,
   BUILD_CITIES,
-  BUREAUCRACY
+  BUREAUCRACY,
 } = require("./constants/phases");
 const { NUMBER_OF_LIGHTED_CITIES_TO_WIN } = require("./constants/rules");
 
@@ -33,21 +39,21 @@ const travellingCostData = fs.readFileSync(
 
 const graph = new Graph(JSON.parse(travellingCostData));
 
-const getGameId = function(req) {
+const getGameId = function (req) {
   return req.cookies.gameId;
 };
 
-const getPlayerId = function(req) {
+const getPlayerId = function (req) {
   return req.cookies.playerId;
 };
 
-const initializeGame = function(req, res) {
+const initializeGame = function (req, res) {
   const gameId = getGameId(req);
   const game = res.app.activeGames[+gameId];
   return game;
 };
 
-const renderHome = function(req, res) {
+const renderHome = function (req, res) {
   if (res.app.cookies[req.cookies.playerId]) {
     const gameId = getGameId(req);
     const game = res.app.activeGames[+gameId];
@@ -59,13 +65,13 @@ const renderHome = function(req, res) {
   return res.render("index.html");
 };
 
-const generateGameId = function(activeGames, randomGenerator) {
+const generateGameId = function (activeGames, randomGenerator) {
   const gameId = Math.round(randomGenerator() * 1000);
   if (activeGames[gameId]) return generateGameId(activeGames, randomGenerator);
   return gameId;
 };
 
-const setCookie = function(res, gameId, player) {
+const setCookie = function (res, gameId, player) {
   const cookie = Date.now();
   res.cookie("playerId", cookie);
   res.cookie("gameId", gameId);
@@ -73,7 +79,7 @@ const setCookie = function(res, gameId, player) {
   player.setId(cookie);
 };
 
-const createGame = function(req, res) {
+const createGame = function (req, res) {
   const gameId = generateGameId(res.app.activeGames, Math.random);
   const game = new Game(req.body.playerCount);
   const powerPlantMarket = new PowerPlantMarket(JSON.parse(powerPlantCards));
@@ -87,13 +93,13 @@ const createGame = function(req, res) {
   res.redirect("/waitingPage");
 };
 
-const renderWaitingPage = function(req, res) {
+const renderWaitingPage = function (req, res) {
   const gameId = getGameId(req);
   const game = res.app.activeGames[+gameId];
   res.render("createdGame.html", { users: game.getPlayers(), gameId });
 };
 
-const renderGamePage = function(req, res) {
+const renderGamePage = function (req, res) {
   const gameId = url.parse(req.url, true).query.gameId;
   const game = res.app.activeGames[+gameId];
   if (game.getCurrentPlayersCount() == game.getMaxPlayersCount()) {
@@ -103,7 +109,7 @@ const renderGamePage = function(req, res) {
   res.send({ users: game.getPlayers(), gameState: game.hasStarted(), gameId });
 };
 
-const renderGameplay = function(req, res) {
+const renderGameplay = function (req, res) {
   try {
     const gameId = getGameId(req);
     const game = res.app.activeGames[+gameId];
@@ -113,14 +119,14 @@ const renderGameplay = function(req, res) {
   }
 };
 
-const addPlayer = function(game, joinerName, res, gameId) {
+const addPlayer = function (game, joinerName, res, gameId) {
   const playerColor = game.getPlayerColor();
   const player = new Player(playerColor, joinerName);
   setCookie(res, gameId, player);
   game.addPlayer(player);
 };
 
-const joinGame = function(req, res) {
+const joinGame = function (req, res) {
   const { gameId, joinerName } = req.body;
   const game = res.app.activeGames[+gameId];
   if (game) {
@@ -133,31 +139,31 @@ const joinGame = function(req, res) {
   res.redirect("/invalidGameId");
 };
 
-const renderErrorPage = function(req, res) {
+const renderErrorPage = function (req, res) {
   res.render("joinPageWithErr.html");
 };
 
-const initializeMarket = function(req, res) {
+const initializeMarket = function (req, res) {
   const game = initializeGame(req, res);
   const cardDetails = JSON.stringify(game.getPowerPlantMarket());
   game.shuffleDeck(_.shuffle);
   res.send(cardDetails);
 };
 
-const createBuildCityLog = function(game, turn, cityCount) {
+const createBuildCityLog = function (game, turn, cityCount) {
   const playerName = turn.getCurrentPlayer().name;
   const logMsg = `${playerName} has build ${cityCount} cities.`;
   game.addLog(logMsg);
 };
 
-const createBuyResourceLog = function(game, turn, resourcesDetail) {
+const createBuyResourceLog = function (game, turn, resourcesDetail) {
   const playerName = turn.getCurrentPlayer().name;
   const cost = resourcesDetail.Cost;
   const logMsg = `${playerName} has bought resources of cost ${cost}.`;
   game.addLog(logMsg);
 };
 
-const getCurrentPlayer = function(req, res) {
+const getCurrentPlayer = function (req, res) {
   const game = initializeGame(req, res);
   const players = game.getPlayers();
   const turn = game.getTurn(players);
@@ -165,7 +171,7 @@ const getCurrentPlayer = function(req, res) {
   res.send(currentPlayer);
 };
 
-const updateCurrentPlayer = function(req, res) {
+const updateCurrentPlayer = function (req, res) {
   const game = initializeGame(req, res);
   const players = game.getPlayers();
   const turn = game.getTurn(players);
@@ -173,7 +179,7 @@ const updateCurrentPlayer = function(req, res) {
   res.send("");
 };
 
-const buyResources = function(req, res) {
+const buyResources = function (req, res) {
   const resourcesDetail = req.body;
   const game = initializeGame(req, res);
   const players = game.getPlayers();
@@ -192,7 +198,7 @@ const buyResources = function(req, res) {
       currentPlayer,
       areValidType,
       areValidQuantities,
-      isLastPlayer
+      isLastPlayer,
     });
     return;
   }
@@ -208,11 +214,11 @@ const buyResources = function(req, res) {
     isPurchaseSuccess,
     areValidType,
     areValidQuantities,
-    isLastPlayer
+    isLastPlayer,
   });
 };
 
-const getStorageCapacity = function(powerPlants) {
+const getStorageCapacity = function (powerPlants) {
   const storageCapacity = {};
   storageCapacity[COAL] = 0;
   storageCapacity[OIL] = 0;
@@ -220,17 +226,17 @@ const getStorageCapacity = function(powerPlants) {
   storageCapacity[URANIUM] = 0;
   storageCapacity[HYBRID] = 0;
 
-  Object.keys(powerPlants).forEach(powerPlant => {
+  Object.keys(powerPlants).forEach((powerPlant) => {
     storageCapacity[powerPlants[powerPlant].resource.type] +=
       powerPlants[powerPlant].resource.quantity * 2;
   });
   return storageCapacity;
 };
 
-const parseResourceDetails = function(selectedResourceDetails) {
+const parseResourceDetails = function (selectedResourceDetails) {
   const selectedResources = {};
   const resources = [COAL, OIL, URANIUM, GRABAGE];
-  resources.filter(resource => {
+  resources.filter((resource) => {
     if (selectedResourceDetails[resource].length > 2) {
       selectedResources[resource] = selectedResourceDetails[resource].split(
         ","
@@ -240,7 +246,7 @@ const parseResourceDetails = function(selectedResourceDetails) {
   return selectedResources;
 };
 
-const areValidTypes = function(playerPowerplants, selectedResourceDetails) {
+const areValidTypes = function (playerPowerplants, selectedResourceDetails) {
   const storageCapacity = getStorageCapacity(playerPowerplants);
   const selectedResources = parseResourceDetails(selectedResourceDetails);
   const selectedResourceTypes = Object.keys(selectedResources);
@@ -249,14 +255,14 @@ const areValidTypes = function(playerPowerplants, selectedResourceDetails) {
     storageCapacity[OIL] += storageCapacity[HYBRID];
   }
   const requiredTypes = Object.keys(storageCapacity).filter(
-    type => storageCapacity[type] != 0
+    (type) => storageCapacity[type] != 0
   );
-  return selectedResourceTypes.every(resourceType =>
+  return selectedResourceTypes.every((resourceType) =>
     requiredTypes.includes(resourceType)
   );
 };
 
-const hasCapacity = function(playerPowerplants, selectedResourceDetails) {
+const hasCapacity = function (playerPowerplants, selectedResourceDetails) {
   const storageCapacity = getStorageCapacity(playerPowerplants);
   const selectedResources = parseResourceDetails(selectedResourceDetails);
   const selectedResourceTypes = Object.keys(selectedResources);
@@ -265,12 +271,12 @@ const hasCapacity = function(playerPowerplants, selectedResourceDetails) {
     storageCapacity[OIL] += storageCapacity[HYBRID] / 2;
   }
   return selectedResourceTypes.every(
-    resourceType =>
+    (resourceType) =>
       selectedResources[resourceType] <= storageCapacity[resourceType]
   );
 };
 
-const buildCities = function(req, res) {
+const buildCities = function (req, res) {
   const price = +req.body.price;
   const cityNames = req.body.cityNames.split("\n");
   const game = initializeGame(req, res);
@@ -280,7 +286,7 @@ const buildCities = function(req, res) {
   const isPaymentSuccess = currentPlayer.payMoney(price);
   const isLastPlayer = turn.isLastPlayer();
   if (isPaymentSuccess) {
-    const cities = cityNames.filter(city => city.length > 1);
+    const cities = cityNames.filter((city) => city.length > 1);
     createBuildCityLog(game, turn, cities.length - 1);
     currentPlayer.addCityNames(cities);
     if (isLastPlayer) game.changePhaseTo(BUREAUCRACY);
@@ -288,30 +294,30 @@ const buildCities = function(req, res) {
   res.send({ isPaymentSuccess, currentPlayer });
 };
 
-const lightCities = function(req, res) {
+const lightCities = function (req, res) {
   const game = initializeGame(req, res);
   const playerId = getPlayerId(req);
-  const currentPlayer = game.players.find(player => player.id == playerId);
+  const currentPlayer = game.players.find((player) => player.id == playerId);
   const cityCount = currentPlayer.getCityCount();
   const resources = currentPlayer.getResources();
   const powerplants = currentPlayer.getPowerplants();
   res.send({ powerplants, cityCount, resources });
 };
 
-const getPowerplants = function(req, res) {
+const getPowerplants = function (req, res) {
   const game = initializeGame(req, res);
   const playerId = getPlayerId(req);
-  const currentPlayer = game.players.find(player => player.id == playerId);
+  const currentPlayer = game.players.find((player) => player.id == playerId);
   const powerplants = currentPlayer.getPowerplants();
   res.send(powerplants);
 };
 
-const returnPlayerResources = function(req, res) {
+const returnPlayerResources = function (req, res) {
   const game = initializeGame(req, res);
   const { cityCount, resources } = req.body;
   const playerId = getPlayerId(req);
   const updatedResources = JSON.parse(resources);
-  const currentPlayer = game.players.find(player => player.id == playerId);
+  const currentPlayer = game.players.find((player) => player.id == playerId);
   const players = game.getPlayers();
   const turn = game.getTurn(players);
   currentPlayer.resources = updatedResources;
@@ -330,13 +336,13 @@ const returnPlayerResources = function(req, res) {
   res.send("");
 };
 
-const getWinner = function(players) {
+const getWinner = function (players) {
   return players.filter(
-    player => player.getLightedCity() >= NUMBER_OF_LIGHTED_CITIES_TO_WIN
+    (player) => player.getLightedCity() >= NUMBER_OF_LIGHTED_CITIES_TO_WIN
   );
 };
 
-const refillResources = function(currentPlayer, game) {
+const refillResources = function (currentPlayer, game) {
   const players = game.players;
   const lastPlayerIndex = players.length - 1;
   const lastPlayer = players[lastPlayerIndex].name;
@@ -349,19 +355,19 @@ const refillResources = function(currentPlayer, game) {
   }
 };
 
-const getPlayers = function(req, res) {
+const getPlayers = function (req, res) {
   const game = initializeGame(req, res);
   const players = game.getPlayers();
   res.send(players);
 };
 
-const updateResourceMarket = function(resourcesDetail, game) {
+const updateResourceMarket = function (resourcesDetail, game) {
   const resourceMarket = game.getResourceMarket();
   const { Coal, Oil, Garbage, Uranium } = resourcesDetail;
   resourceMarket.updateResources({ Coal, Oil, Garbage, Uranium });
 };
 
-const makeBid = function(req, res) {
+const makeBid = function (req, res) {
   const bidAmount = req.body.bidAmount;
   const game = initializeGame(req, res);
   let selectedPowerPlant = game.currentPowerPlant;
@@ -375,14 +381,14 @@ const makeBid = function(req, res) {
   res.send("");
 };
 
-const selectPowerPlant = function(req, res) {
+const selectPowerPlant = function (req, res) {
   const game = initializeGame(req, res);
   const powerPlantCost = req.body.powerPlantCost;
   game.addSelectedPowerPlant(powerPlantCost);
   res.send("");
 };
 
-const getCurrentBid = function(req, res) {
+const getCurrentBid = function (req, res) {
   const game = initializeGame(req, res);
   const players = game.getPlayers();
   const turn = game.getTurn(players);
@@ -413,7 +419,7 @@ const getCurrentBid = function(req, res) {
         hasMoreThenThreePowerplants:
           Object.keys(player.getPowerplants()).length > 3,
         currentPlayerId: player.id,
-        powerplants: player.getPowerplants()
+        powerplants: player.getPowerplants(),
       })
     );
   }
@@ -422,12 +428,12 @@ const getCurrentBid = function(req, res) {
       currentBid,
       isBidOver,
       isAuctionStarted,
-      players: bidPlayers
+      players: bidPlayers,
     })
   );
 };
 
-const getGameDetails = function(req, res) {
+const getGameDetails = function (req, res) {
   try {
     const game = initializeGame(req, res);
     const players = game.getPlayers();
@@ -446,7 +452,7 @@ const getGameDetails = function(req, res) {
     const resources = resourceMarket.getResources();
     const powerPlants = game.getPowerPlantMarket();
     const playerId = getPlayerId(req);
-    const playerStats = game.players.find(player => player.id == playerId);
+    const playerStats = game.players.find((player) => player.id == playerId);
     res.send(
       JSON.stringify({
         player,
@@ -456,7 +462,7 @@ const getGameDetails = function(req, res) {
         phase: game.currentPhase(),
         playerStats,
         logs: game.getLogs(),
-        winner: game.getWinner()
+        winner: game.getWinner(),
       })
     );
   } catch (error) {
@@ -464,11 +470,11 @@ const getGameDetails = function(req, res) {
   }
 };
 
-const formatCityNames = function(cityNames) {
-  return cityNames.map(city => city.substr(0, city.length - 3));
+const formatCityNames = function (cityNames) {
+  return cityNames.map((city) => city.substr(0, city.length - 3));
 };
 
-const getBuildingCost = function(req, res) {
+const getBuildingCost = function (req, res) {
   const game = initializeGame(req, res);
   const players = game.getPlayers();
   const turn = game.getTurn(players);
@@ -481,7 +487,7 @@ const getBuildingCost = function(req, res) {
   }
 
   const getMinCost = getMinimumCost.bind(null, playerCities);
-  const minCosts = selectedCities.map(city => {
+  const minCosts = selectedCities.map((city) => {
     const minCost = getMinCost(city);
     playerCities.push(city);
     return minCost;
@@ -490,14 +496,14 @@ const getBuildingCost = function(req, res) {
   res.send("" + totalCost);
 };
 
-const getMinimumCost = function(playerCities, selectedCity) {
-  const allPossiblePaths = playerCities.map(playerCity =>
+const getMinimumCost = function (playerCities, selectedCity) {
+  const allPossiblePaths = playerCities.map((playerCity) =>
     Math.floor(graph.path(playerCity, selectedCity, { cost: true }).cost)
   );
   return _.min(allPossiblePaths);
 };
 
-const passBuyingResources = function(req, res) {
+const passBuyingResources = function (req, res) {
   const game = initializeGame(req, res);
   const players = game.getPlayers();
   const turn = game.getTurn(players);
@@ -509,12 +515,12 @@ const passBuyingResources = function(req, res) {
   res.send({ isLastPlayer });
 };
 
-const sendLogs = function(req, res) {
+const sendLogs = function (req, res) {
   const game = initializeGame(req, res);
   res.send(game.getLogs());
 };
 
-const passBuildingCities = function(req, res) {
+const passBuildingCities = function (req, res) {
   const game = initializeGame(req, res);
   const players = game.getPlayers();
   const turn = game.getTurn(players);
@@ -526,7 +532,7 @@ const passBuildingCities = function(req, res) {
   res.send({ isLastPlayer });
 };
 
-const discardPowerplant = function(req, res) {
+const discardPowerplant = function (req, res) {
   const powerplantValue = req.body.powerplant;
   const game = initializeGame(req, res);
   const players = game.getPlayers();
@@ -534,6 +540,26 @@ const discardPowerplant = function(req, res) {
   res.send("");
 };
 
+const saveGame = function (req, res) {
+  const gameData = initializeGame(req, res);
+  const currentPlayer = getCurrentPlayer2(gameData);
+  gameData.addLog(
+    `${currentPlayer} has saved Current game with ID ${req.cookies.gameId} `
+  );
+  fs.writeFile(
+    "./private/data/savedGames.json",
+    JSON.stringify(gameData),
+    () => {}
+  );
+  res.send(gameData);
+};
+
+function getCurrentPlayer2(game) {
+  const players = game.getPlayers();
+  const turn = game.getTurn(players);
+  const currentPlayer = turn.getCurrentPlayer().name;
+  return currentPlayer;
+}
 module.exports = {
   renderHome,
   createGame,
@@ -561,5 +587,6 @@ module.exports = {
   getGameDetails,
   getBuildingCost,
   sendLogs,
-  discardPowerplant
+  discardPowerplant,
+  saveGame,
 };

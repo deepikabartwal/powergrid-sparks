@@ -34,6 +34,7 @@ const {
   sendLogs,
   passBuildingCities,
   discardPowerplant,
+  saveGame,
 } = require("./src/handlers");
 
 app.set("views", __dirname + "/public/html");
@@ -70,6 +71,7 @@ app.post("/buildingCost", getBuildingCost);
 app.get("/passBuyingResources", passBuyingResources);
 app.get("/logs", sendLogs);
 app.post("/discardPowerplant", discardPowerplant);
+app.get("/saveGame", saveGame);
 
 app.use(express.static("public/html"));
 app.use(express.static("public/stylesheet"));
